@@ -2,6 +2,6 @@
   "name": "cat-album",
   "version": "1.0.0",
   "dependencies": {
-    "@vercel/blob": "^1.0.0" 
+    "@netlify/blobs": "^1.0.0"
   }
 }
