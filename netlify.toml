@@ -1,7 +1,7 @@
 [build]
   publish = "."
   functions = "api"
-  command = "npm install"
+  command = "npm install && npm ci --prefer-offline"
 
 [[redirects]]
   from = "/api/*"
