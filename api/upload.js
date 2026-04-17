@@ -1,15 +1,6 @@
-import { put } from '@vercel/blob';
+import { getStore } from '@netlify/blobs';
 
 export default async function handler(req, res) {
-  const file = req.files.file;
-  const desc = req.body.desc || '';
-  const blob = await put(file.name, file.data, {
-    access: 'public',
-    metadata: { desc }
-  });
-  res.status(200).json(blob);
+  const store = getStore({ name: 'cat-images' });
+  // ...处理文件并保存到 store
 }
-
-export const config = {
-  api: { bodyParser: false }
-};
