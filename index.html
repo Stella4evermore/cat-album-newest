@@ -8,7 +8,7 @@
   * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box; 
+    box-sizing: border-box;
     font-family: 'SF Pro Text', 'Microsoft YaHei', sans-serif;
   }
 
@@ -226,7 +226,8 @@
       try {
         const res = await fetch('/api/list');
         const data = await res.json();
-        const total = data.blobs?.reduce((s, b) => s + (b.size || 0), 0) || 0;
+        // ✅ 适配 Netlify：data.images 而非 data.blobs
+        const total = data.images?.reduce((s, b) => s + (b.size || 0), 0) || 0;
         const max = 1024 * 1024 * 1024;
         spaceInfo.innerText = `已用 ${formatSize(total)} / 剩余 ${formatSize(max - total)}`;
       } catch (e) {
@@ -234,32 +235,32 @@
       }
     }
 
-    // 加载所有媒体
+    // 加载所有媒体（✅ 适配 Netlify 返回结构）
     async function loadMedia() {
       gallery.innerHTML = '<div class="loading">加载中…</div>';
       try {
         const res = await fetch('/api/list');
         const data = await res.json();
-        if (!data.blobs || data.blobs.length === 0) {
+        // ✅ 适配 Netlify：data.images 而非 data.blobs
+        if (!data.images || data.images.length === 0) {
           gallery.innerHTML = '<div class="empty">还没有小猫的照片或视频哦～</div>';
           return;
         }
-        // 按时间倒序排列（最新的在前面）
-        const blobs = data.blobs.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+        const blobs = data.images.sort((a, b) => new Date(b.uploadedAt || 0) - new Date(a.uploadedAt || 0));
         gallery.innerHTML = blobs.map(b => `
           <div class="card">
-            ${b.pathname.endsWith('.mp4')
+            ${b.name.endsWith('.mp4')
               ? `<video src="${b.url}" controls muted playsinline></video>`
               : `<img src="${b.url}" alt="小猫">`
             }
             <div class="file-info">
               <div class="file-desc">${b.metadata?.desc || '暂无描述'}</div>
               <div class="file-meta">
-                <span>${formatDate(b.uploadedAt)}</span>
+                <span>${formatDate(b.uploadedAt || new Date())}</span>
                 <span>${formatSize(b.size || 0)}</span>
               </div>
             </div>
-            <button class="del-btn" onclick="del('${b.pathname}')">×</button>
+            <button class="del-btn" onclick="del('${b.name}')">×</button>
           </div>
         `).join('');
       } catch (err) {
@@ -267,14 +268,15 @@
       }
     }
 
-    // 删除文件
-    async function del(path) {
+    // 删除文件（✅ 适配 Netlify：传 key 而非 path）
+    async function del(name) {
       if (!confirm('确定要删除吗？删除后无法恢复')) return;
       try {
         await fetch('/api/delete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path })
+          // ✅ 适配 Netlify：后端期待 { key: xxx }
+          body: JSON.stringify({ key: name })
         });
         loadMedia();
         loadSpace();
@@ -283,7 +285,7 @@
       }
     }
 
-    // 上传文件 + 文字
+    // 上传文件（✅ 已支持 FormData，无需修改）
     fileInput.addEventListener('change', async e => {
       const file = e.target.files[0];
       if (!file) return;
@@ -305,7 +307,7 @@
       }
     });
 
-    // 初始化 
+    // 初始化
     (async () => {
       await loadMedia();
       await loadSpace();
